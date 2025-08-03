@@ -21,7 +21,7 @@ export class OMessageEncoder<C extends Context = Context> extends MessageEncoder
         buffer.replaceAll("\n","<br/>")
         const sendReslut = await axios.get(this.bot.config.endpoint+"/?module=im&action=send_message&token="+this.bot.internal.token+"&receiver="+userId+"&message="+buffer);
         if(sendReslut.data.status=='error'){
-            buffer="<font color='red'>为你发送消息失败:"+sendReslut.data.message+"</color>"
+            buffer="<font color='red'>为你发送消息失败:"+sendReslut.data.message+"</font>"
             axios.get(this.bot.config.endpoint+"/?module=im&action=send_message&token="+this.bot.internal.token+"&receiver="+userId+"&message="+buffer);
         }
     }
