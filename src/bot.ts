@@ -23,9 +23,10 @@ export interface OttohubBot<C extends Context, T extends OttohubBot.Config = Ott
 }
 export namespace OttohubBot {
     export interface Config {
-        endpoint: string
-        user: string
-        password: string
+        endpoint: string,
+        user: string,
+        password: string,
+        timeout: number
   }
   export const Config: Schema<Config> = Schema.intersect([
     Schema.object({
@@ -37,8 +38,12 @@ export namespace OttohubBot {
         .default("4384")
         .description("邮箱或uid"),
       password: Schema.string()
-        .default("password")
         .description("你的登录密码")
+        .required(),
+      timeout: Schema.number()
+        .role("url")
+        .default(1000)
+        .description("刷新列表的延时"),
     })
   ])
 }

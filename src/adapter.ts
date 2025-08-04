@@ -25,9 +25,16 @@ export class OttohubAdapter<C extends Context> extends Adapter<C,OttohubBot<C>> 
     bot.ctx.logger.info("Starting...")
     bot.status=Universal.Status.CONNECT;
     await this.doLogin(bot);
-    this.timer = setInterval(() => this.update(bot), 1000);
+    if(this.status==OttohubAdapter.STATUS_ERR){
+      bot.offline();
+      return;
+    }
+    this.timer = setInterval(() => this.update(bot), bot.config.timeout);
   }
   async update(bot:OttohubBot<C>){
+    if(this.status==OttohubAdapter.STATUS_LOGGINGIN){
+        await this.doLogin(bot);
+    }
     const ml = await this.getMessageList(bot);
     if(ml==null||ml.length===0) return;
     for (const v of ml) {
@@ -44,6 +51,8 @@ export class OttohubAdapter<C extends Context> extends Adapter<C,OttohubBot<C>> 
         session.content = v.content.toString();
         session.event.user.id=v.from.uid.toString();
         session.event.user.name=v.from.username.toString();
+        session.messageId=v.id.toString();
+        session.guildId=v.from.uid.toString();
         bot.dispatch(session)
     }
   }
@@ -57,6 +66,12 @@ export class OttohubAdapter<C extends Context> extends Adapter<C,OttohubBot<C>> 
     let rawML:any[] = [];
     for(let i:number=0;true;i++){
         const urml = await axios.get(bot.config.endpoint+"/?module=im&action=unread_message_list&token="+bot.internal.token+"&num=12&offset="+(i*12));
+        if(urml.data.toString().includes("error_token")){
+          this.status=OttohubAdapter.STATUS_LOGGINGIN;
+          bot.offline();
+          bot.status=Universal.Status.RECONNECT;
+          return null;
+        }
         if(urml.data.status!='success'){
             bot.logger.warn("failed fetch messages: "+urml.data.message);
             return null;
